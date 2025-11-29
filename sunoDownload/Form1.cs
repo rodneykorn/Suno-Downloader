@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows.Forms;
+using NAudio.Wave;
 
 namespace sunoDownload
 {
@@ -27,8 +28,10 @@ namespace sunoDownload
 
             string audioUrl = $"https://cdn1.suno.ai/{songId}.mp3";
             string outputFolder = Path.Combine(Application.StartupPath, "Downloads");
-            string outputFileName = string.IsNullOrWhiteSpace(songName) ? $"{songId}.wav" : $"{songName}.wav";
+            string outputFileNameWav = string.IsNullOrWhiteSpace(songName) ? $"{songId}.wav" : $"{songName}.wav";
+            string outputFileName = string.IsNullOrWhiteSpace(songName) ? $"{songId}.mp3" : $"{songName}.mp3";
             string outputPath = Path.Combine(outputFolder, outputFileName);
+            string outputPathWav = Path.Combine(outputFolder, outputFileNameWav);
 
             using (var client = new HttpClient())
             {
@@ -47,6 +50,7 @@ namespace sunoDownload
 
                     // Save the audio bytes to a file in the "Downloads" folder
                     await File.WriteAllBytesAsync(outputPath, audioBytes);
+                    ConvertMp3ToWav(outputPath, outputPathWav);
 
                     MessageBox.Show("Audio track downloaded successfully.");
                 }
@@ -74,6 +78,15 @@ namespace sunoDownload
             }
 
             return string.Empty;
+        }
+
+        private static void ConvertMp3ToWav(string mp3FilePath, string wavFilePath)
+        {
+            using (var reader = new Mp3FileReader(mp3FilePath))
+            using (var writer = new WaveFileWriter(wavFilePath, reader.WaveFormat))
+            {
+                reader.CopyTo(writer);
+            }
         }
     }
 }
